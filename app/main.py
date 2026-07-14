@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from .database import Base, engine
 from .seed import seed_all
-from .routers import location
+from .routers import location, map
 
 app = FastAPI()
 
@@ -17,6 +17,7 @@ app.add_middleware(
 )
 
 app.include_router(location.router)
+app.include_router(map.router)
 
 @app.on_event("startup")
 def on_startup():
