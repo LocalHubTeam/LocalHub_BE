@@ -2,8 +2,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from .database import Base, engine
 from .seed import seed_all
+from .routers import location, map
 from .routers.posts import router as posts_router
-from .routers import location
 
 app = FastAPI()
 
@@ -20,6 +20,7 @@ app.add_middleware(
 
 app.include_router(posts_router)
 app.include_router(location.router)
+app.include_router(map.router)
 
 @app.on_event("startup")
 def on_startup():
@@ -29,3 +30,4 @@ def on_startup():
 @app.get("/")
 def health_check():
     return {"status": "ok"}
+  
