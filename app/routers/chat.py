@@ -30,12 +30,18 @@ class ChatRequest(BaseModel):
     history: list[ChatMessage] = []
 
 
-# 지역명 매핑 (13개 확정 지역)
+# 시군구까지 특정하는 지역명 (구체적 매칭, 우선순위 높음)
 REGION_KEYWORDS = {
     "구미": ("47", "190"), "칠곡": ("47", "830"), "성주": ("47", "840"), "고령": ("47", "850"),
-    "대구 중구": ("27", "110"), "대구 동구": ("27", "140"), "대구 서구": ("27", "170"),
-    "대구 남구": ("27", "200"), "대구 북구": ("27", "230"), "대구 수성구": ("27", "260"),
-    "대구 달서구": ("27", "290"), "달성": ("27", "710"), "군위": ("27", "720"),
+    "중구": ("27", "110"), "동구": ("27", "140"), "서구": ("27", "170"),
+    "남구": ("27", "200"), "북구": ("27", "230"), "수성구": ("27", "260"),
+    "달서구": ("27", "290"), "달성": ("27", "710"), "군위": ("27", "720"),
+}
+
+# 광역 단위 지역명 (구체적 매칭이 없을 때 사용)
+BROAD_REGION_KEYWORDS = {
+    "대구": "27",
+    "경북": "47",
 }
 
 CATEGORY_KEYWORDS = {
@@ -49,11 +55,21 @@ def search_locations(db: Session, message: str, limit: int = 5):
     query = db.query(Location)
 
     matched_region = False
+
+    # 1) 시군구까지 구체적인 지역명 먼저 확인
     for keyword, (regn, signgu) in REGION_KEYWORDS.items():
         if keyword in message:
             query = query.filter(Location.lDongRegnCd == regn, Location.lDongSignguCd == signgu)
             matched_region = True
             break
+
+    # 2) 구체적인 매칭이 없으면 광역 단위(대구/경북) 확인
+    if not matched_region:
+        for keyword, regn in BROAD_REGION_KEYWORDS.items():
+            if keyword in message:
+                query = query.filter(Location.lDongRegnCd == regn)
+                matched_region = True
+                break
 
     matched_category = False
     for keyword, type_id in CATEGORY_KEYWORDS.items():
