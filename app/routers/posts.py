@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi import Query
 from sqlalchemy.orm import Session
+from sqlalchemy import func
 
 from ..database import SessionLocal
 from ..models import Post
@@ -75,7 +76,16 @@ def list_posts(
 
 @router.get("/{postId}", response_model=PostRead)
 def get_post(postId: int, db: Session = Depends(get_db)):
+    # 안전하게 조회수 증가 후 최신 값을 반환
+    # DB 레벨에서 업데이트하여 동시성 문제 완화
+    updated = db.query(Post).filter(Post.id == postId).update(
+        {Post.view_count: (Post.view_count or 0) + 1}, synchronize_session=False
+    )
+    if updated:
+        db.commit()
     return _get_post_or_404(db, postId)
+
+# Removed POST /{post_id}/view to avoid double-increment when GET already increases view_count
 
 
 @router.post("", response_model=PostRead, status_code=status.HTTP_201_CREATED)
@@ -119,3 +129,4 @@ def delete_post(postId: int, payload: PasswordVerifyRequest, db: Session = Depen
 def verify_password(postId: int, payload: PasswordVerifyRequest, db: Session = Depends(get_db)):
     post = _get_post_or_404(db, postId)
     return PasswordVerifyResponse(verified=post.password == payload.password)
+
