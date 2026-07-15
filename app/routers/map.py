@@ -17,7 +17,7 @@ def get_db():
 
 
 @router.get(
-    "/api/locations",
+    "/api/maps",
     summary="장소 목록 조회",
     description="카테고리, 소분류, 지역, 검색어로 장소 목록을 전체 조회합니다.",
     tags=["map"],
